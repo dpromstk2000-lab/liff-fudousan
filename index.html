@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>お部屋探し条件診断</title>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <style>
+        :root {
+            --primary-color: #06C755; /* LINEグリーン */
+            --bg-color: #f4f7f6;
+            --text-color: #333;
+        }
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+        .container {
+            width: 100%;
+            max-width: 480px;
+            background: #fff;
+            min-height: 100vh;
+            box-sizing: border-box;
+            padding: 20px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+        /* プログレスバー */
+        .progress-container {
+            width: 100%;
+            background-color: #e0e0e0;
+            height: 6px;
+            border-radius: 3px;
+            margin-bottom: 25px;
+        }
+        .progress-bar {
+            height: 100%;
+            background-color: var(--primary-color);
+            width: 25%;
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+        /* ステップ（画面切替）の制御 */
+        .step {
+            display: none;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+        .step.active {
+            display: flex;
+        }
+        h2 {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            text-align: center;
+            line-height: 1.4;
+        }
+        /* ボタン・選択肢のデザイン */
+        .options-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 30px;
+        }
+        .option-btn {
+            background-color: #fff;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 16px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+        }
+        .option-btn:active {
+            background-color: #f0fbf4;
+            border-color: var(--primary-color);
+            transform: scale(0.98);
+        }
+        .option-btn.selected {
+            background-color: #e6f9ee;
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+        /* 複数選択（チェックボックス風） */
+        .checkbox-list .option-btn {
+            justify-content: space-between;
+        }
+        .checkbox-list .option-btn::after {
+            content: '◯';
+            color: #ccc;
+        }
+        .checkbox-list .option-btn.selected::after {
+            content: '✓';
+            color: var(--primary-color);
+        }
+        /* 下部ナビゲーションボタン */
+        .nav-buttons {
+            margin-top: auto;
+            display: flex;
+            gap: 10px;
+            padding-top: 20px;
+        }
+        .btn {
+            flex: 1;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            text-align: center;
+        }
+        .btn-back {
+            background-color: #e0e0e0;
+            color: #666;
+        }
+        .btn-next {
+            background-color: var(--primary-color);
+            color: #fff;
+        }
+        .btn-submit {
+            background-color: #00b900;
+            color: #fff;
+            width: 100%;
+        }
+        /* 完了画面 */
+        .thanks-msg {
+            text-align: center;
+            margin-top: 40px;
+        }
+        .thanks-icon {
+            font-size: 4rem;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="progress-container">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <div class="step active" id="step1">
+        <h2>Q1. 今回のお引越しの<br>きっかけを教えてください！</h2>
+        <div class="options-list">
+            <button class="option-btn" onclick="selectSingle(1, 'ひとり暮らしを始める')">🏠 ひとり暮らしを始める</button>
+            <button class="option-btn" onclick="selectSingle(1, '結婚・同棲をキッカケに')">💍 結婚・同棲をキッカケに</button>
+            <button class="option-btn" onclick="selectSingle(1, '手狭になった（ファミリー）')">👶 手狭になった（ファミリー）</button>
+            <button class="option-btn" onclick="selectSingle(1, '現在の賃貸の更新が近い')">⏳ 現在の賃貸の更新が近い</button>
+        </div>
+    </div>
+
+    <div class="step" id="step2">
+        <h2>Q2. ご希望のエリアは<br>どのあたりですか？</h2>
+        <div class="options-list">
+            <button class="option-btn" onclick="selectSingle(2, '志免町・宇美町周辺')">📍 志免町・宇美町周辺</button>
+            <button class="option-btn" onclick="selectSingle(2, '粕屋町・須恵町周辺')">📍 粕屋町・須恵町周辺</button>
+            <button class="option-btn" onclick="selectSingle(2, '福岡市博多区エリア')">📍 福岡市博多区エリア</button>
+            <button class="option-btn" onclick="selectSingle(2, 'その他（未定・相談したい）')">💬 その他（未定・相談したい）</button>
+        </div>
+        <div class="nav-buttons">
+            <button class="btn btn-back" onclick="prevStep(1)">戻る</button>
+        </div>
+    </div>
+
+    <div class="step" id="step3">
+        <h2>Q3. 理想の間取りはどれですか？</h2>
+        <div class="options-list">
+            <button class="option-btn" onclick="selectSingle(3, '1K / 1LDK（単身向け）')">🚪 1K / 1LDK（単身向け）</button>
+            <button class="option-btn" onclick="selectSingle(3, '2DK / 2LDK（二人暮らし）')">🛋️ 2DK / 2LDK（二人暮らし）</button>
+            <button class="option-btn" onclick="selectSingle(3, '3LDK以上（ファミリー）')">👨‍👩‍👧 3LDK以上（ファミリー）</button>
+        </div>
+        <div class="nav-buttons">
+            <button class="btn btn-back" onclick="prevStep(2)">戻る</button>
+        </div>
+    </div>
+
+    <div class="step" id="step4">
+        <h2>Q4. これだけは譲れない！<br>という条件は？（複数選択可）</h2>
+        <div class="options-list checkbox-list">
+            <button class="option-btn" onclick="toggleMulti(this, 'バストイレ別')">🛁 バストイレ別</button>
+            <button class="option-btn" onclick="toggleMulti(this, '駅から徒歩10分以内')">🚃 駅から徒歩10分以内</button>
+            <button class="option-btn" onclick="toggleMulti(this, '駐車場が絶対に必要')">🚗 駐車場が絶対に必要</button>
+            <button class="option-btn" onclick="toggleMulti(this, '築浅（キレイなお部屋）')">✨ 築浅（キレイなお部屋）</button>
+        </div>
+        <div class="nav-buttons">
+            <button class="btn btn-back" onclick="prevStep(3)">戻る</button>
+            <button class="btn btn-next" onclick="nextStep(5)">次へ</button>
+        </div>
+    </div>
+
+    <div class="step" id="step5">
+        <div class="thanks-msg">
+            <div class="thanks-icon">📋</div>
+            <h2>ご回答ありがとうございました！</h2>
+            <p style="color:#666; font-size:0.9rem; margin-bottom:30px;">下のボタンを押すと、条件にピッタリの非公開物件リストをLINEでお送りします。</p>
+            <button class="btn btn-submit" onclick="submitData()">この条件で物件を探してもらう</button>
+        </div>
+        <div class="nav-buttons">
+            <button class="btn btn-back" onclick="prevStep(4)">戻る</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 回答データを格納するオブジェクト
+    let answers = {
+        reason: '',
+        area: '',
+        layout: '',
+        conditions: []
+    };
+
+    // 初期化：LIFFの起動（本番時はここに自分のLIFF IDを入れます）
+    document.addEventListener("DOMContentLoaded", function() {
+        liff.init({ liffId: "ユーザー毎のLIFF_IDをここに設定" })
+            .then(() => {
+                console.log("LIFF 初期化成功");
+            })
+            .catch((err) => {
+                console.error("LIFF 初期化失敗", err);
+            });
+    });
+
+    // 単一選択ボタンの処理
+    function selectSingle(currentStep, value) {
+        // データの保存
+        if(currentStep === 1) answers.reason = value;
+        if(currentStep === 2) answers.area = value;
+        if(currentStep === 3) answers.layout = value;
+
+        // ボタンの選択状態の見た目を変更
+        const stepDiv = document.getElementById(`step${currentStep}`);
+        const buttons = stepDiv.querySelectorAll('.option-btn');
+        buttons.forEach(btn => btn.classList.remove('selected'));
+        event.currentTarget.classList.add('selected');
+
+        // 0.2秒後に自動で次のステップへ（テンポよく進めるため）
+        setTimeout(() => {
+            nextStep(currentStep + 1);
+        }, 200);
+    }
+
+    // 複数選択ボタンの処理
+    function toggleMulti(element, value) {
+        element.classList.toggle('selected');
+        const index = answers.conditions.indexOf(value);
+        if (index > -1) {
+            answers.conditions.splice(index, 1);
+        } else {
+            answers.conditions.push(value);
+        }
+    }
+
+    // 画面遷移コントロール
+    function nextStep(stepNum) {
+        document.querySelectorAll('.step').forEach(step => step.classList.remove('active'));
+        document.getElementById(`step${stepNum}`).classList.add('active');
+        
+        // プログレスバーの進捗変更
+        const percent = (stepNum / 5) * 100;
+        document.getElementById('progressBar').style.width = `${percent}%`;
+    }
+
+    function prevStep(stepNum) {
+        document.querySelectorAll('.step').forEach(step => step.classList.remove('active'));
+        document.getElementById(`step${stepNum}`).classList.add('active');
+        
+        const percent = (stepNum / 5) * 100;
+        document.getElementById('progressBar').style.width = `${percent}%`;
+    }
+
+    // 【最重要】LINEへデータを送信して画面を閉じる
+    function submitData() {
+        const condText = answers.conditions.length > 0 ? answers.conditions.join(', ') : '特になし';
+        
+        // LINEのトーク画面に自動投稿するテキストを作成
+        const messageText = `【物件診断リクエスト】\n` +
+                            `■引っ越し理由: ${answers.reason}\n` +
+                            `■希望エリア: ${answers.area}\n` +
+                            `■希望の間取り: ${answers.layout}\n` +
+                            `■こだわり条件: ${condText}\n` +
+                            `この条件に合う最新物件を教えてください！`;
+
+        // LIFF経由でメッセージを送信
+        if (liff.isInClient()) {
+            liff.sendMessages([{
+                type: 'text',
+                text: messageText
+            }]).then(() => {
+                // 送信成功したらLIFFウィンドウを自動で閉じる
+                liff.closeWindow();
+            }).catch((err) => {
+                alert('メッセージの送信に失敗しました: ' + err);
+            });
+        } else {
+            // PCのブラウザなどでテスト表示している場合用
+            alert("LINEアプリ以外で開いているため、本来はここでチャットに以下の内容が送信されて画面が閉じます：\n\n" + messageText);
+        }
+    }
+</script>
+</body>
+</html>
